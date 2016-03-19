@@ -257,7 +257,10 @@ Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploy
 new-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root "C:\DeploymentShare" -Description "MDT Deployment Share" -NetworkPath ("\\" + $env:computername + "\DeploymentShare$") -Verbose | add-MDTPersistentDrive -Verbose
 
 # Update SourcePath - I map a drive to Azure File Service
-#import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "M:\source\Operating Systems\win2012r2" -DestinationFolder "win2012r2" -Verbose
+Invoke-WebRequest -Uri 'http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO' -OutFile 'C:\Win2012r2.iso'
+Mount-DiskImage -ImagePath 'C:\Win2012r2.iso'
+import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
+DisMount-DiskImage -ImagePath 'C:\Win2012r2.iso'
 
 # Update SourcePath again, I keep my update .msu's in this folder e.g. Win8.1AndW2K12R2-KB3134758-x64.msu (WMF 5.0 for DSC)
 # Download WMF 5.0 from here: https://msdn.microsoft.com/en-us/powershell/wmf/requirements
@@ -279,13 +282,13 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/ma
 # Update CustomerSettings.ini and Bootstrap.ini
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CustomSettings.ini' -OutFile 'C:\DeploymentShare\Control\CustomSettings.ini'
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/Bootstrap.ini' -OutFile 'C:\DeploymentShare\Control\Bootstrap.ini'
-Add-Content C:\DeploymentShare\Control\Bootstrap.ini "`nDeployRoot=\\" + $env:computername + "\DeploymentShare$"
+Add-Content C:\DeploymentShare\Control\Bootstrap.ini ("`nDeployRoot=\\" + $env:computername + "\DeploymentShare$")
 New-Item -Path "C:\DeploymentShare\SLShare" -ItemType directory
 Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nSLShare=\\" + $env:computername + "\DeploymentShare$\SLShare")
 Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nEventService=http://" + $env:computername + ":9800")
 
 # Update Deployment Share
-# update-MDTDeploymentShare -path "DS001:" -Verbose
+update-MDTDeploymentShare -path "DS001:" -Verbose
 
 }
 
