@@ -232,6 +232,68 @@ function InstallPackages
 ##################################################################################################
 
 #
+# Description:
+#  - Configure MDT on the machine.
+#
+# Parameters:
+#  - N/A.
+#
+# Return:
+#  - N/A.
+#
+# Notes:
+#  - N/A.
+#
+
+function ConfigureMDT
+{
+
+# Setup-DeploymentShare
+New-Item -Path "C:\DeploymentShare" -ItemType directory
+New-SmbShare -Name "DeploymentShare$" -Path "C:\DeploymentShare" -FullAccess Administrators
+Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploymentToolkit.psd1"
+
+# Update NetworkPath if server name not MDTServer
+new-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root "C:\DeploymentShare" -Description "MDT Deployment Share" -NetworkPath "\\" + $env:computername + "\DeploymentShare$" -Verbose | add-MDTPersistentDrive -Verbose
+
+# Update SourcePath - I map a drive to Azure File Service
+#import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "M:\source\Operating Systems\win2012r2" -DestinationFolder "win2012r2" -Verbose
+
+# Update SourcePath again, I keep my update .msu's in this folder e.g. Win8.1AndW2K12R2-KB3134758-x64.msu (WMF 5.0 for DSC)
+# Download WMF 5.0 from here: https://msdn.microsoft.com/en-us/powershell/wmf/requirements
+new-item -path "DS001:\Packages" -enable "True" -Name "Win2012r2" -Comments "" -ItemType "folder" -Verbose
+New-Item -Path "C:\DeploymentShare\PackageSource" -ItemType directory
+Invoke-WebRequest -Uri 'http://go.microsoft.com/fwlink/?LinkId=717507' -OutFile 'C:\DeploymentShare\PackageSource\Win8.1AndW2K12R2-KB3134758-x64.msu'
+import-mdtpackage -path "DS001:\Packages\Win2012r2" -SourcePath "C:\DeploymentShare\PackageSource" -Verbose
+
+# Setup MDT Applications
+
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/EnableRDP.ps1' -OutFile 'C:\DeploymentShare\Applications\EnableRDP.ps1'
+new-item -path "DS001:\Applications" -enable "True" -Name "Tweaks" -Comments "" -ItemType "folder" -Verbose
+import-MDTApplication -path "DS001:\Applications\Tweaks" -enable "True" -Name "Microsoft Enable Remote Desktop" -ShortName "Enable Remote Desktop" -Version "" -Publisher "Microsoft" -Language "" -CommandLine "Powershell -noprofile -executionpolicy bypass -file .\EnableRDP.ps1" -WorkingDirectory ".\Applications" -NoSource -Verbose
+
+# Create Task Sequence
+import-mdttasksequence -path "DS001:\Task Sequences" -Name "Windows Server 2012 R2 Standard" -Template "Server.xml" -Comments "" -ID "Server2012r2std" -Version "1.0" -OperatingSystemPath "DS001:\Operating Systems\Windows Server 2012 R2 SERVERSTANDARD in win2012r2 install.wim" -FullName "Employee" -OrgName "Microsoft Corporation" -HomePage "about:blank" -AdminPassword "P@ssword1" -Verbose
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/Server.xml' -OutFile 'C:\DeploymentShare\Control\SERVER2012R2STD\Server.xml'
+
+# Update CustomerSettings.ini and Bootstrap.ini
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CustomSettings.ini' -OutFile 'C:\DeploymentShare\Control\CustomSettings.ini'
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/Bootstrap.ini' -OutFile 'C:\DeploymentShare\Control\Bootstrap.ini'
+Add-Content C:\DeploymentShare\Control\Bootstrap.ini "`nDeployRoot=\\" + $env:computername + "\DeploymentShare$"
+New-Item -Path "C:\DeploymentShare\SLShare" -ItemType directory
+Add-Content C:\DeploymentShare\Control\CustomSettings.ini "`nSLShare=\\" + $env:computername + "\DeploymentShare$\SLShare"
+Add-Content C:\DeploymentShare\Control\CustomSettings.ini "`nEventService=http://" + $env:computername + ":9800"
+
+# Update Deployment Share
+# update-MDTDeploymentShare -path "DS001:" -Verbose
+
+}
+
+##################################################################################################
+
+
+
+#
 # 
 #
 
@@ -248,6 +310,11 @@ try
 
     # install the specified packages
     InstallPackages -packagesList $RawPackagesList
+
+    # configure MDT
+    ConfigureMDT
+
+
 }
 catch
 {
