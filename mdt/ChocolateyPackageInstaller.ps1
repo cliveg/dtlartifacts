@@ -257,7 +257,8 @@ Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploy
 new-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root "C:\DeploymentShare" -Description "MDT Deployment Share" -NetworkPath ("\\" + $env:computername + "\DeploymentShare$") -Verbose | add-MDTPersistentDrive -Verbose
 
 # Update SourcePath - I map a drive to Azure File Service
-Invoke-WebRequest -Uri 'http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO' -OutFile 'C:\DeploymentShare\Win2012r2.ico'
+Import-Module BitsTransfer
+Start-BitsTransfer -Source 'http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO' -Destination 'C:\DeploymentShare\Win2012r2.ico'
 Mount-DiskImage -ImagePath 'C:\DeploymentShare\Win2012r2.ico'
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
 DisMount-DiskImage -ImagePath 'C:\DeploymentShare\Win2012r2.ico'
