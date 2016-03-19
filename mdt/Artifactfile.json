@@ -9,7 +9,7 @@
   "iconUri": "https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/mdt.png",
   "targetOsType": "Windows",
   "runCommand": {
-    "commandToExecute": "powershell.exe -ExecutionPolicy bypass -File startChocolatey.ps1 -PackageList mdt,azcopy,windows-adk"
+    "commandToExecute": "powershell.exe -ExecutionPolicy bypass -File startChocolatey.ps1 -PackageList mdt,azcopy,windows-adk-deploy"
 
   }
 }
