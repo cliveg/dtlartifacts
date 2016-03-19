@@ -254,7 +254,7 @@ New-SmbShare -Name "DeploymentShare$" -Path "C:\DeploymentShare" -FullAccess Adm
 Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploymentToolkit.psd1"
 
 # Update NetworkPath if server name not MDTServer
-new-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root "C:\DeploymentShare" -Description "MDT Deployment Share" -NetworkPath "\\" + $env:computername + "\DeploymentShare$" -Verbose | add-MDTPersistentDrive -Verbose
+new-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root "C:\DeploymentShare" -Description "MDT Deployment Share" -NetworkPath ("\\" + $env:computername + "\DeploymentShare$") -Verbose | add-MDTPersistentDrive -Verbose
 
 # Update SourcePath - I map a drive to Azure File Service
 #import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "M:\source\Operating Systems\win2012r2" -DestinationFolder "win2012r2" -Verbose
@@ -274,15 +274,15 @@ import-MDTApplication -path "DS001:\Applications\Tweaks" -enable "True" -Name "M
 
 # Create Task Sequence
 import-mdttasksequence -path "DS001:\Task Sequences" -Name "Windows Server 2012 R2 Standard" -Template "Server.xml" -Comments "" -ID "Server2012r2std" -Version "1.0" -OperatingSystemPath "DS001:\Operating Systems\Windows Server 2012 R2 SERVERSTANDARD in win2012r2 install.wim" -FullName "Employee" -OrgName "Microsoft Corporation" -HomePage "about:blank" -AdminPassword "P@ssword1" -Verbose
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/Server.xml' -OutFile 'C:\DeploymentShare\Control\SERVER2012R2STD\Server.xml'
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/ts.xml' -OutFile 'C:\DeploymentShare\Control\SERVER2012R2STD\ts.xml'
 
 # Update CustomerSettings.ini and Bootstrap.ini
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CustomSettings.ini' -OutFile 'C:\DeploymentShare\Control\CustomSettings.ini'
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/Bootstrap.ini' -OutFile 'C:\DeploymentShare\Control\Bootstrap.ini'
 Add-Content C:\DeploymentShare\Control\Bootstrap.ini "`nDeployRoot=\\" + $env:computername + "\DeploymentShare$"
 New-Item -Path "C:\DeploymentShare\SLShare" -ItemType directory
-Add-Content C:\DeploymentShare\Control\CustomSettings.ini "`nSLShare=\\" + $env:computername + "\DeploymentShare$\SLShare"
-Add-Content C:\DeploymentShare\Control\CustomSettings.ini "`nEventService=http://" + $env:computername + ":9800"
+Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nSLShare=\\" + $env:computername + "\DeploymentShare$\SLShare")
+Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nEventService=http://" + $env:computername + ":9800")
 
 # Update Deployment Share
 # update-MDTDeploymentShare -path "DS001:" -Verbose
