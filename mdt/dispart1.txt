@@ -1,0 +1,5 @@
+create vdisk file="d:\MDTAzure.vhd" maximum=127000 type=expandable 
+attach vdisk
+create partition primary
+assign letter=V
+format fs=ntfs quick
