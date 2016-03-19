@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Azure/azure-devtestlab/master/schemas/2015-01-01/dtlArtifacts.json",
+  "title": "git",
+  "description": "Installs MDT using the Chocolatey package manager",
+  "tags": [
+    "Windows",
+    "MDT"
+  ],
+  "iconUri": "https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/mdt.png",
+  "targetOsType": "Windows",
+  "runCommand": {
+    "commandToExecute": "powershell.exe -ExecutionPolicy bypass -File startChocolatey.ps1 -PackageList mdt,azcopy,windows-adk"
+
+  }
+}
