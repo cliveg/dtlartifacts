@@ -285,8 +285,13 @@ Start-Process 'C:\DeploymentShare\ConfigMgrTools.msi' /qn -Wait
 while (!(Test-Path "D:\Win2012r2.iso")) { Start-Sleep 10 }
 Mount-DiskImage -ImagePath 'D:\Win2012r2.iso'
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
-DisMount-DiskImage -ImagePath 'C:\DeploymentShare\Win2012r2.iso'
-#Remove-Item D:\Win2012r2.iso
+DisMount-DiskImage -ImagePath 'D:\Win2012r2.iso'
+Remove-Item D:\Win2012r2.iso
+
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/diskpart1.txt' -OutFile 'C:\DeploymentShare\diskpart1.txt'
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/diskpart2.txt' -OutFile 'C:\DeploymentShare\diskpart2.txt'
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CreateVHD.cmd' -OutFile 'C:\DeploymentShare\CreateVHD.cmd'
+
 
 # Create Task Sequence
 import-mdttasksequence -path "DS001:\Task Sequences" -Name "Windows Server 2012 R2 Standard" -Template "Server.xml" -Comments "" -ID "Server2012r2std" -Version "1.0" -OperatingSystemPath "DS001:\Operating Systems\Windows Server 2012 R2 SERVERSTANDARD in win2012r2 install.wim" -FullName "Employee" -OrgName "Microsoft Corporation" -HomePage "about:blank" -AdminPassword "P@ssword1" -Verbose
