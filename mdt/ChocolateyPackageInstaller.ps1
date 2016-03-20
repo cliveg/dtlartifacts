@@ -280,18 +280,12 @@ Start-Process 'C:\DeploymentShare\ConfigMgrTools.msi' /qn -Wait
 
 # Update SourcePath
 #Import-Module BitsTransfer
-#http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO
 #Start-BitsTransfer -Source 'http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO' -Destination 'C:\Win2012r2X.iso' -ErrorAction SilentlyContinue
 while (!(Test-Path "D:\Win2012r2.iso")) { Start-Sleep 10 }
 Mount-DiskImage -ImagePath 'D:\Win2012r2.iso'
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
 DisMount-DiskImage -ImagePath 'D:\Win2012r2.iso'
-Remove-Item D:\Win2012r2.iso
-
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/diskpart1.txt' -OutFile 'C:\DeploymentShare\diskpart1.txt'
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/diskpart2.txt' -OutFile 'C:\DeploymentShare\diskpart2.txt'
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CreateVHD.cmd' -OutFile 'C:\DeploymentShare\CreateVHD.cmd'
-
+#Remove-Item D:\Win2012r2.iso
 
 # Create Task Sequence
 import-mdttasksequence -path "DS001:\Task Sequences" -Name "Windows Server 2012 R2 Standard" -Template "Server.xml" -Comments "" -ID "Server2012r2std" -Version "1.0" -OperatingSystemPath "DS001:\Operating Systems\Windows Server 2012 R2 SERVERSTANDARD in win2012r2 install.wim" -FullName "Employee" -OrgName "Microsoft Corporation" -HomePage "about:blank" -AdminPassword "P@ssword1" -Verbose
@@ -299,6 +293,20 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/ma
 
 # Update Deployment Share
 update-MDTDeploymentShare -path "DS001:" -Verbose
+
+# Build Image
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/diskpart1.txt' -OutFile 'C:\DeploymentShare\diskpart1.txt'
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/diskpart2.txt' -OutFile 'C:\DeploymentShare\diskpart2.txt'
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CreateVHD.cmd' -OutFile 'C:\DeploymentShare\CreateVHD.cmd'
+
+# C:\Windows\system32\cmd.exe /k
+# CD "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\"
+# CD "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment"
+# C:\DeploymentShare\CreateVHD.cmd
+
+$url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO"
+$output = "c:\win2012r2.iso"
+(New-Object System.Net.WebClient).DownloadFile($url, $output)
 
 }
 
