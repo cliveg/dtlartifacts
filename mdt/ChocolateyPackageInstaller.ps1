@@ -267,10 +267,6 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/ma
 new-item -path "DS001:\Applications" -enable "True" -Name "Tweaks" -Comments "" -ItemType "folder" -Verbose
 import-MDTApplication -path "DS001:\Applications\Tweaks" -enable "True" -Name "Microsoft Enable Remote Desktop" -ShortName "Enable Remote Desktop" -Version "" -Publisher "Microsoft" -Language "" -CommandLine "Powershell -noprofile -executionpolicy bypass -file .\EnableRDP.ps1" -WorkingDirectory ".\Applications" -NoSource -Verbose
 
-# Create Task Sequence
-import-mdttasksequence -path "DS001:\Task Sequences" -Name "Windows Server 2012 R2 Standard" -Template "Server.xml" -Comments "" -ID "Server2012r2std" -Version "1.0" -OperatingSystemPath "DS001:\Operating Systems\Windows Server 2012 R2 SERVERSTANDARD in win2012r2 install.wim" -FullName "Employee" -OrgName "Microsoft Corporation" -HomePage "about:blank" -AdminPassword "P@ssword1" -Verbose
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/ts.xml' -OutFile 'C:\DeploymentShare\Control\SERVER2012R2STD\ts.xml'
-
 # Update CustomerSettings.ini and Bootstrap.ini
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CustomSettings.ini' -OutFile 'C:\DeploymentShare\Control\CustomSettings.ini'
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/Bootstrap.ini' -OutFile 'C:\DeploymentShare\Control\Bootstrap.ini'
@@ -282,9 +278,13 @@ Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nEventService=http:
 Invoke-WebRequest -Uri 'https://download.microsoft.com/download/5/0/8/508918E1-3627-4383-B7D8-AA07B3490D21/ConfigMgrTools.msi' -OutFile 'C:\DeploymentShare\ConfigMgrTools.msi'
 Start-Process 'C:\DeploymentShare\ConfigMgrTools.msi' /qn -Wait
 
+# Create Task Sequence
+import-mdttasksequence -path "DS001:\Task Sequences" -Name "Windows Server 2012 R2 Standard" -Template "Server.xml" -Comments "" -ID "Server2012r2std" -Version "1.0" -OperatingSystemPath "DS001:\Operating Systems\Windows Server 2012 R2 SERVERSTANDARD in win2012r2 install.wim" -FullName "Employee" -OrgName "Microsoft Corporation" -HomePage "about:blank" -AdminPassword "P@ssword1" -Verbose
+Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/ts.xml' -OutFile 'C:\DeploymentShare\Control\SERVER2012R2STD\ts.xml'
 
 # Update SourcePath
 Import-Module BitsTransfer  
+#http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO
 Start-BitsTransfer -Source 'http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO' -Destination 'C:\Win2012r2X.iso' -ErrorAction SilentlyContinue
 Mount-DiskImage -ImagePath 'D:\Win2012r2.iso'
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
