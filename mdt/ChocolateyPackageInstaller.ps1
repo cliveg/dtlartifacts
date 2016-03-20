@@ -279,8 +279,10 @@ Invoke-WebRequest -Uri 'https://download.microsoft.com/download/5/0/8/508918E1-3
 Start-Process 'C:\DeploymentShare\ConfigMgrTools.msi' /qn -Wait
 
 # Update SourcePath
-#Import-Module BitsTransfer
-#Start-BitsTransfer -Source 'http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO' -Destination 'C:\Win2012r2X.iso' -ErrorAction SilentlyContinue
+$url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO"
+$output = "d:\win2012r2.iso"
+(New-Object System.Net.WebClient).DownloadFile($url, $output)
+
 while (!(Test-Path "D:\Win2012r2.iso")) { Start-Sleep 10 }
 Mount-DiskImage -ImagePath 'D:\Win2012r2.iso'
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
@@ -304,9 +306,6 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/ma
 # CD "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment"
 # C:\DeploymentShare\CreateVHD.cmd
 
-$url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO"
-$output = "c:\win2012r2.iso"
-(New-Object System.Net.WebClient).DownloadFile($url, $output)
 
 }
 
