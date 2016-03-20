@@ -249,19 +249,19 @@ function ConfigureMDT
 {
 
 # Setup-DeploymentShare
-New-Item -Path "C:\DeploymentShare" -ItemType directory
-New-SmbShare -Name "DeploymentShare$" -Path "C:\DeploymentShare" -FullAccess Administrators
+New-Item -Path "C:\DeploymentShare" -ItemType directory -ErrorAction SilentlyContinue
+New-SmbShare -Name "DeploymentShare$" -Path "C:\DeploymentShare" -FullAccess Administrators -ErrorAction SilentlyContinue
 Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploymentToolkit.psd1"
 
 # Update NetworkPath if server name not MDTServer
-new-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root "C:\DeploymentShare" -Description "MDT Deployment Share" -NetworkPath ("\\" + $env:computername + "\DeploymentShare$") -Verbose | add-MDTPersistentDrive -Verbose
+new-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root "C:\DeploymentShare" -Description "MDT Deployment Share" -NetworkPath ("\\" + $env:computername + "\DeploymentShare$") -Verbose | add-MDTPersistentDrive -Verbose -ErrorAction SilentlyContinue
 
-# Update SourcePath - I map a drive to Azure File Service
-Import-Module BitsTransfer
-Start-BitsTransfer -Source 'http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO' -Destination 'C:\DeploymentShare\Win2012r2.ico'
-Mount-DiskImage -ImagePath 'C:\DeploymentShare\Win2012r2.ico'
+# Update SourcePath
+Import-Module BitsTransfer  
+Start-BitsTransfer -Source 'http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO' -Destination 'C:\DeploymentShare\Win2012r2.iso' 
+Mount-DiskImage -ImagePath 'C:\DeploymentShare\Win2012r2.iso'
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
-DisMount-DiskImage -ImagePath 'C:\DeploymentShare\Win2012r2.ico'
+DisMount-DiskImage -ImagePath 'C:\DeploymentShare\Win2012r2.iso'
 
 # Update Packages example below for WMF 5.0
 new-item -path "DS001:\Packages" -enable "True" -Name "Win2012r2" -Comments "" -ItemType "folder" -Verbose
