@@ -283,7 +283,7 @@ $url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC
 $output = "c:\DeploymentShare\win2012r2.iso"
 (New-Object System.Net.WebClient).DownloadFile($url, $output)
 
-while (!(Test-Path "D:\Win2012r2.iso")) { Start-Sleep 10 }
+while (!(Test-Path $output)) { Start-Sleep 10 }
 Mount-DiskImage -ImagePath $output
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
 DisMount-DiskImage -ImagePath $output
