@@ -254,7 +254,7 @@ WriteLog $("Downloading:" + $output)
 (New-Object System.Net.WebClient).DownloadFile($url, $output)
 
 # Setup-DeploymentShare
-WriteLog $("Settingup MDT")
+WriteLog $("Setting up MDT")
 New-Item -Path "C:\DeploymentShare" -ItemType directory -ErrorAction SilentlyContinue
 New-SmbShare -Name "DeploymentShare$" -Path "C:\DeploymentShare" -FullAccess Administrators -ErrorAction SilentlyContinue
 Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploymentToolkit.psd1"
@@ -284,18 +284,22 @@ Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nEventService=http:
 Invoke-WebRequest -Uri 'https://download.microsoft.com/download/5/0/8/508918E1-3627-4383-B7D8-AA07B3490D21/ConfigMgrTools.msi' -OutFile 'C:\DeploymentShare\ConfigMgrTools.msi'
 Start-Process 'C:\DeploymentShare\ConfigMgrTools.msi' /qn -Wait
 
+WriteLog $("Importing " + $output)
 #while (!(Test-Path $output)) { Start-Sleep 10 }
 Mount-DiskImage -ImagePath $output
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
 DisMount-DiskImage -ImagePath $output
 #Remove-Item $output
+WriteLog $("Importing Complete - " + (Test-Path 'c:\deploymentshare\Operating Systems\win2012r2'))
 
 # Create Task Sequence
 import-mdttasksequence -path "DS001:\Task Sequences" -Name "Windows Server 2012 R2 Standard" -Template "Server.xml" -Comments "" -ID "Server2012r2std" -Version "1.0" -OperatingSystemPath "DS001:\Operating Systems\Windows Server 2012 R2 SERVERSTANDARD in win2012r2 install.wim" -FullName "Employee" -OrgName "Microsoft Corporation" -HomePage "about:blank" -AdminPassword "P@ssword1" -Verbose
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/ts.xml' -OutFile 'C:\DeploymentShare\Control\SERVER2012R2STD\ts.xml'
 
 # Update Deployment Share
+WriteLog $("Updating Deployment Share")
 update-MDTDeploymentShare -path "DS001:" -Verbose
+WriteLog $("Updating Deployment Share - Complete")
 
 # Build Image
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/diskpart1.txt' -OutFile 'C:\DeploymentShare\diskpart1.txt'
@@ -306,6 +310,7 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/ma
 # CD "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\"
 # CD "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment"
 # C:\DeploymentShare\CreateVHD.cmd
+WriteLog $("Calling CreateVHD")
 $out = C:\DeploymentShare\CreateVHD.cmd
 WriteLog $("CreateVHD " + $out)
 }
