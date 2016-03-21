@@ -284,7 +284,7 @@ $output = "c:\DeploymentShare\win2012r2.iso"
 (New-Object System.Net.WebClient).DownloadFile($url, $output)
 
 while (!(Test-Path "D:\Win2012r2.iso")) { Start-Sleep 10 }
-Mount-DiskImage -ImagePath 'D:\Win2012r2.iso'
+Mount-DiskImage -ImagePath $output
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
 DisMount-DiskImage -ImagePath $output
 #Remove-Item $output
