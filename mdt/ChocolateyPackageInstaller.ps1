@@ -280,14 +280,14 @@ Start-Process 'C:\DeploymentShare\ConfigMgrTools.msi' /qn -Wait
 
 # Update SourcePath
 $url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO"
-$output = "d:\win2012r2.iso"
+$output = "c:\DeploymentShare\win2012r2.iso"
 (New-Object System.Net.WebClient).DownloadFile($url, $output)
 
 while (!(Test-Path "D:\Win2012r2.iso")) { Start-Sleep 10 }
 Mount-DiskImage -ImagePath 'D:\Win2012r2.iso'
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
-DisMount-DiskImage -ImagePath 'D:\Win2012r2.iso'
-#Remove-Item D:\Win2012r2.iso
+DisMount-DiskImage -ImagePath $output
+#Remove-Item $output
 
 # Create Task Sequence
 import-mdttasksequence -path "DS001:\Task Sequences" -Name "Windows Server 2012 R2 Standard" -Template "Server.xml" -Comments "" -ID "Server2012r2std" -Version "1.0" -OperatingSystemPath "DS001:\Operating Systems\Windows Server 2012 R2 SERVERSTANDARD in win2012r2 install.wim" -FullName "Employee" -OrgName "Microsoft Corporation" -HomePage "about:blank" -AdminPassword "P@ssword1" -Verbose
