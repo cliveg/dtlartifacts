@@ -306,8 +306,8 @@ Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/ma
 # CD "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\"
 # CD "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment"
 # C:\DeploymentShare\CreateVHD.cmd
-
-
+$out = C:\DeploymentShare\CreateVHD.cmd
+WriteLog $("CreateVHD " + $out)
 }
 
 ##################################################################################################
