@@ -247,8 +247,14 @@ function InstallPackages
 
 function ConfigureMDT
 {
+# Update SourcePath
+$url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO"
+$output = "c:\DeploymentShare\win2012r2.iso"
+WriteLog $("Downloading:" + $output)
+(New-Object System.Net.WebClient).DownloadFile($url, $output)
 
 # Setup-DeploymentShare
+WriteLog $("Settingup MDT")
 New-Item -Path "C:\DeploymentShare" -ItemType directory -ErrorAction SilentlyContinue
 New-SmbShare -Name "DeploymentShare$" -Path "C:\DeploymentShare" -FullAccess Administrators -ErrorAction SilentlyContinue
 Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploymentToolkit.psd1"
@@ -278,12 +284,7 @@ Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nEventService=http:
 Invoke-WebRequest -Uri 'https://download.microsoft.com/download/5/0/8/508918E1-3627-4383-B7D8-AA07B3490D21/ConfigMgrTools.msi' -OutFile 'C:\DeploymentShare\ConfigMgrTools.msi'
 Start-Process 'C:\DeploymentShare\ConfigMgrTools.msi' /qn -Wait
 
-# Update SourcePath
-$url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO"
-$output = "c:\DeploymentShare\win2012r2.iso"
-(New-Object System.Net.WebClient).DownloadFile($url, $output)
-
-while (!(Test-Path $output)) { Start-Sleep 10 }
+#while (!(Test-Path $output)) { Start-Sleep 10 }
 Mount-DiskImage -ImagePath $output
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
 DisMount-DiskImage -ImagePath $output
