@@ -1,2 +1,2 @@
-select vdisk file="d:\MDTAzure.vhd"
+select vdisk file="c:\MDTAzure.vhd"
 detach vdisk

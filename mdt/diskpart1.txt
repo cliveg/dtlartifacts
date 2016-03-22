@@ -1,4 +1,4 @@
-create vdisk file="d:\MDTAzure.vhd" maximum=127000 type=expandable 
+create vdisk file="c:\MDTAzure.vhd" maximum=127000 type=expandable 
 attach vdisk
 clean
 create partition primary size=25000
