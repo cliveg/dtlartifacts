@@ -251,10 +251,10 @@ function ConfigureMDT
 $url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO"
 $output = "c:\win2012r2.iso"
 WriteLog $("Downloading:" + $output)
-(New-Object System.Net.WebClient).DownloadFile($url, $output)
+#(New-Object System.Net.WebClient).DownloadFile($url, $output)
 
 # Setup-DeploymentShare
-WriteLog $("Setting up MDT")
+WriteLog $("Setting up MDT Share")
 New-Item -Path "C:\DeploymentShare" -ItemType directory -ErrorAction SilentlyContinue
 New-SmbShare -Name "DeploymentShare$" -Path "C:\DeploymentShare" -FullAccess Administrators -ErrorAction SilentlyContinue
 Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploymentToolkit.psd1"
@@ -263,31 +263,36 @@ Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploy
 new-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root "C:\DeploymentShare" -Description "MDT Deployment Share" -NetworkPath ("\\" + $env:computername + "\DeploymentShare$") -Verbose | add-MDTPersistentDrive -Verbose -ErrorAction SilentlyContinue
 
 # Update Packages example below for WMF 5.0
-new-item -path "DS001:\Packages" -enable "True" -Name "Win2012r2" -Comments "" -ItemType "folder" -Verbose
-New-Item -Path "C:\DeploymentShare\PackageSource" -ItemType directory
+WriteLog $("Setting up Packages")
+new-item -path "DS001:\Packages" -enable "True" -Name "Win2012r2" -Comments "" -ItemType "folder" -Verbose -ErrorAction SilentlyContinue
+New-Item -Path "C:\DeploymentShare\PackageSource" -ItemType directory -ErrorAction SilentlyContinue
 Invoke-WebRequest -Uri 'http://go.microsoft.com/fwlink/?LinkId=717507' -OutFile 'C:\DeploymentShare\PackageSource\Win8.1AndW2K12R2-KB3134758-x64.msu'
 import-mdtpackage -path "DS001:\Packages\Win2012r2" -SourcePath "C:\DeploymentShare\PackageSource" -Verbose
 
 # Setup MDT Applications
+WriteLog $("Setting up Applications")
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/EnableRDP.ps1' -OutFile 'C:\DeploymentShare\Applications\EnableRDP.ps1'
-new-item -path "DS001:\Applications" -enable "True" -Name "Tweaks" -Comments "" -ItemType "folder" -Verbose
+new-item -path "DS001:\Applications" -enable "True" -Name "Tweaks" -Comments "" -ItemType "folder" -Verbose -ErrorAction SilentlyContinue
 import-MDTApplication -path "DS001:\Applications\Tweaks" -enable "True" -Name "Microsoft Enable Remote Desktop" -ShortName "Enable Remote Desktop" -Version "" -Publisher "Microsoft" -Language "" -CommandLine "Powershell -noprofile -executionpolicy bypass -file .\EnableRDP.ps1" -WorkingDirectory ".\Applications" -NoSource -Verbose
 
 # Update CustomerSettings.ini and Bootstrap.ini
+WriteLog $("Setting up CustomSettings")
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CustomSettings.ini' -OutFile 'C:\DeploymentShare\Control\CustomSettings.ini'
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/Bootstrap.ini' -OutFile 'C:\DeploymentShare\Control\Bootstrap.ini'
 Add-Content C:\DeploymentShare\Control\Bootstrap.ini ("`nDeployRoot=\\" + $env:computername + "\DeploymentShare$")
-New-Item -Path "C:\DeploymentShare\SLShare" -ItemType directory
+New-Item -Path "C:\DeploymentShare\SLShare" -ItemType directory -ErrorAction SilentlyContinue
 Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nSLShare=\\" + $env:computername + "\DeploymentShare$\SLShare")
 Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nEventService=http://" + $env:computername + ":9800")
 
+WriteLog $("Setting up ConfigMgr Tools")
 Invoke-WebRequest -Uri 'https://download.microsoft.com/download/5/0/8/508918E1-3627-4383-B7D8-AA07B3490D21/ConfigMgrTools.msi' -OutFile 'C:\DeploymentShare\ConfigMgrTools.msi'
 Start-Process 'C:\DeploymentShare\ConfigMgrTools.msi' /qn -Wait
 
 WriteLog $("Importing " + $output)
 #while (!(Test-Path $output)) { Start-Sleep 10 }
 Mount-DiskImage -ImagePath $output
-import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath "F:\" -DestinationFolder "win2012r2" -Verbose
+$driveLetter = (get-diskimage -imagepath $output|Get-Volume).DriveLetter
+import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath ($driveLetter + ":\") -DestinationFolder "win2012r2" -Verbose
 DisMount-DiskImage -ImagePath $output
 #Remove-Item $output
 WriteLog $("Importing Complete - " + (Test-Path 'c:\deploymentshare\Operating Systems\win2012r2'))
