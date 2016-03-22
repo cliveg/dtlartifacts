@@ -288,14 +288,15 @@ WriteLog $("Setting up ConfigMgr Tools")
 Invoke-WebRequest -Uri 'https://download.microsoft.com/download/5/0/8/508918E1-3627-4383-B7D8-AA07B3490D21/ConfigMgrTools.msi' -OutFile 'C:\DeploymentShare\ConfigMgrTools.msi'
 #Start-Process 'C:\DeploymentShare\ConfigMgrTools.msi' /qn -Wait
 
-WriteLog $("Mounting ISO")
+$output = "c:\win2012r2.iso"
+WriteLog $("Mounting ISO:" + $output)
 # while (!(Test-Path $output)) { Start-Sleep 10 }
-Mount-DiskImage -ImagePath $output
+Mount-DiskImage -ImagePath $output -ErrorAction SilentlyContinue
 WriteLog $("About to Import")
 $driveLetter = (get-diskimage -imagepath $output|Get-Volume).DriveLetter
 import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath ($driveLetter + ":\") -DestinationFolder "win2012r2" -Verbose
 WriteLog $("Imported")
-DisMount-DiskImage -ImagePath $output
+DisMount-DiskImage -ImagePath $output -ErrorAction SilentlyContinue
 WriteLog $("Dismounted")
 #Remove-Item $output
 WriteLog $("Importing Complete - " + (Test-Path 'c:\deploymentshare\Operating Systems\win2012r2'))
