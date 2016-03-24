@@ -303,11 +303,6 @@ function ConfigureMDT
     WriteLog $("Started-ConfigureMDT")
     $output = "c:\win2012r2.iso"
 
-    # Update SourcePath
-    $url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO"
-    WriteLog $("Downloading:" + $output)
-    (New-Object System.Net.WebClient).DownloadFile($url, $output)
-
     # Setup-DeploymentShare
     WriteLog $("Setting up MDT Share")
     New-Item -Path "C:\DeploymentShare" -ItemType directory -ErrorAction SilentlyContinue
