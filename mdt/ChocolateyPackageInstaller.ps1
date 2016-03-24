@@ -234,6 +234,57 @@ function InstallPackages
 
 #
 # Description:
+#  - Download Windows 2012 r2 ISO on the machine.
+#
+# Parameters:
+#  - N/A.
+#
+# Return:
+#  - N/A.
+#
+# Notes:
+#  - N/A.
+#
+
+function DownloadWindows2012r2
+{
+
+    WriteLog $("Started-DownloadWindows2012r2")
+    $output = "c:\win2012r2.iso"
+    if ((Test-Path $output)) {
+        WriteLog $("ISO already exists")
+        throw "$output already exists"
+    }
+
+    # Update SourcePath
+    $url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO"
+    WriteLog $("Downloading:" + $output)
+    (New-Object System.Net.WebClient).DownloadFile($url, $output)
+
+    WriteLog $("Mounting ISO:" + $output)
+
+    if (Test-Path $output) { 
+        if((Get-Item $output).length -gt 0kb){
+            WriteLog $("File exists and not 0kb:")
+        }
+    }
+
+    if ( -not (Test-Path $output)) {
+        WriteLog $("File does not exist:" + $output)
+        throw "$output does not exist"
+    }
+
+    # while (!(Test-Path $output)) { Start-Sleep 10 }
+    Mount-DiskImage -ImagePath $output -ErrorAction SilentlyContinue
+    WriteLog $("Ready to Import")
+    $driveLetter = (get-diskimage -imagepath $output|Get-Volume).DriveLetter
+    WriteLog $("Driveletter to Import:" + $driveletter)
+}
+
+##################################################################################################
+
+#
+# Description:
 #  - Configure MDT on the machine.
 #
 # Parameters:
@@ -248,81 +299,80 @@ function InstallPackages
 
 function ConfigureMDT
 {
-# Update SourcePath
-$url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO"
-$output = "c:\win2012r2.iso"
-WriteLog $("Downloading:" + $output)
-(New-Object System.Net.WebClient).DownloadFile($url, $output)
 
-# Setup-DeploymentShare
-WriteLog $("Setting up MDT Share")
-New-Item -Path "C:\DeploymentShare" -ItemType directory -ErrorAction SilentlyContinue
-New-SmbShare -Name "DeploymentShare$" -Path "C:\DeploymentShare" -FullAccess Administrators -ErrorAction SilentlyContinue
-Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploymentToolkit.psd1"
+    WriteLog $("Started-ConfigureMDT")
+    $output = "c:\win2012r2.iso"
 
-# Update NetworkPath if server name not MDTServer
-new-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root "C:\DeploymentShare" -Description "MDT Deployment Share" -NetworkPath ("\\" + $env:computername + "\DeploymentShare$") -Verbose | add-MDTPersistentDrive -Verbose -ErrorAction SilentlyContinue
+    # Update SourcePath
+    $url = "http://care.dlservice.microsoft.com/dl/download/6/2/A/62A76ABB-9990-4EFC-A4FE-C7D698DAEB96/9600.17050.WINBLUE_REFRESH.140317-1640_X64FRE_SERVER_EVAL_EN-US-IR3_SSS_X64FREE_EN-US_DV9.ISO"
+    WriteLog $("Downloading:" + $output)
+    (New-Object System.Net.WebClient).DownloadFile($url, $output)
 
-# Update Packages example below for WMF 5.0
-WriteLog $("Setting up Packages")
-new-item -path "DS001:\Packages" -enable "True" -Name "Win2012r2" -Comments "" -ItemType "folder" -Verbose -ErrorAction SilentlyContinue
-New-Item -Path "C:\DeploymentShare\PackageSource" -ItemType directory -ErrorAction SilentlyContinue
-Invoke-WebRequest -Uri 'http://go.microsoft.com/fwlink/?LinkId=717507' -OutFile 'C:\DeploymentShare\PackageSource\Win8.1AndW2K12R2-KB3134758-x64.msu'
-import-mdtpackage -path "DS001:\Packages\Win2012r2" -SourcePath "C:\DeploymentShare\PackageSource" -Verbose
+    # Setup-DeploymentShare
+    WriteLog $("Setting up MDT Share")
+    New-Item -Path "C:\DeploymentShare" -ItemType directory -ErrorAction SilentlyContinue
+    New-SmbShare -Name "DeploymentShare$" -Path "C:\DeploymentShare" -FullAccess Administrators -ErrorAction SilentlyContinue
+    Import-Module "C:\Program Files\Microsoft Deployment Toolkit\bin\MicrosoftDeploymentToolkit.psd1"
 
-# Setup MDT Applications
-WriteLog $("Setting up Applications")
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/EnableRDP.ps1' -OutFile 'C:\DeploymentShare\Applications\EnableRDP.ps1'
-new-item -path "DS001:\Applications" -enable "True" -Name "Tweaks" -Comments "" -ItemType "folder" -Verbose -ErrorAction SilentlyContinue
-import-MDTApplication -path "DS001:\Applications\Tweaks" -enable "True" -Name "Microsoft Enable Remote Desktop" -ShortName "Enable Remote Desktop" -Version "" -Publisher "Microsoft" -Language "" -CommandLine "Powershell -noprofile -executionpolicy bypass -file .\EnableRDP.ps1" -WorkingDirectory ".\Applications" -NoSource -Verbose
+    # Update NetworkPath if server name not MDTServer
+    new-PSDrive -Name "DS001" -PSProvider "MDTProvider" -Root "C:\DeploymentShare" -Description "MDT Deployment Share" -NetworkPath ("\\" + $env:computername + "\DeploymentShare$") -Verbose | add-MDTPersistentDrive -Verbose -ErrorAction SilentlyContinue
 
-# Update CustomerSettings.ini and Bootstrap.ini
-WriteLog $("Setting up CustomSettings")
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CustomSettings.ini' -OutFile 'C:\DeploymentShare\Control\CustomSettings.ini'
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/Bootstrap.ini' -OutFile 'C:\DeploymentShare\Control\Bootstrap.ini'
-Add-Content C:\DeploymentShare\Control\Bootstrap.ini ("`nDeployRoot=\\" + $env:computername + "\DeploymentShare$")
-New-Item -Path "C:\DeploymentShare\SLShare" -ItemType directory -ErrorAction SilentlyContinue
-Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nSLShare=\\" + $env:computername + "\DeploymentShare$\SLShare")
-Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nEventService=http://" + $env:computername + ":9800")
+    # Update Packages example below for WMF 5.0
+    WriteLog $("Setting up Packages")
+    new-item -path "DS001:\Packages" -enable "True" -Name "Win2012r2" -Comments "" -ItemType "folder" -Verbose -ErrorAction SilentlyContinue
+    New-Item -Path "C:\DeploymentShare\PackageSource" -ItemType directory -ErrorAction SilentlyContinue
+    Invoke-WebRequest -Uri 'http://go.microsoft.com/fwlink/?LinkId=717507' -OutFile 'C:\DeploymentShare\PackageSource\Win8.1AndW2K12R2-KB3134758-x64.msu'
+    import-mdtpackage -path "DS001:\Packages\Win2012r2" -SourcePath "C:\DeploymentShare\PackageSource" -Verbose
 
-WriteLog $("Setting up ConfigMgr Tools")
-Invoke-WebRequest -Uri 'https://download.microsoft.com/download/5/0/8/508918E1-3627-4383-B7D8-AA07B3490D21/ConfigMgrTools.msi' -OutFile 'C:\DeploymentShare\ConfigMgrTools.msi'
-#Start-Process 'C:\DeploymentShare\ConfigMgrTools.msi' /qn -Wait
+    # Setup MDT Applications
+    WriteLog $("Setting up Applications")
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/EnableRDP.ps1' -OutFile 'C:\DeploymentShare\Applications\EnableRDP.ps1'
+    new-item -path "DS001:\Applications" -enable "True" -Name "Tweaks" -Comments "" -ItemType "folder" -Verbose -ErrorAction SilentlyContinue
+    import-MDTApplication -path "DS001:\Applications\Tweaks" -enable "True" -Name "Microsoft Enable Remote Desktop" -ShortName "Enable Remote Desktop" -Version "" -Publisher "Microsoft" -Language "" -CommandLine "Powershell -noprofile -executionpolicy bypass -file .\EnableRDP.ps1" -WorkingDirectory ".\Applications" -NoSource -Verbose
 
-$output = "c:\win2012r2.iso"
-WriteLog $("Mounting ISO:" + $output)
-# while (!(Test-Path $output)) { Start-Sleep 10 }
-Mount-DiskImage -ImagePath $output -ErrorAction SilentlyContinue
-WriteLog $("About to Import")
-$driveLetter = (get-diskimage -imagepath $output|Get-Volume).DriveLetter
-import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath ($driveLetter + ":\") -DestinationFolder "win2012r2" -Verbose
-WriteLog $("Imported")
-DisMount-DiskImage -ImagePath $output -ErrorAction SilentlyContinue
-WriteLog $("Dismounted")
-#Remove-Item $output
-WriteLog $("Importing Complete - " + (Test-Path 'c:\deploymentshare\Operating Systems\win2012r2'))
+    # Update CustomerSettings.ini and Bootstrap.ini
+    WriteLog $("Setting up CustomSettings")
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CustomSettings.ini' -OutFile 'C:\DeploymentShare\Control\CustomSettings.ini'
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/Bootstrap.ini' -OutFile 'C:\DeploymentShare\Control\Bootstrap.ini'
+    Add-Content C:\DeploymentShare\Control\Bootstrap.ini ("`nDeployRoot=\\" + $env:computername + "\DeploymentShare$")
+    New-Item -Path "C:\DeploymentShare\SLShare" -ItemType directory -ErrorAction SilentlyContinue
+    Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nSLShare=\\" + $env:computername + "\DeploymentShare$\SLShare")
+    Add-Content C:\DeploymentShare\Control\CustomSettings.ini ("`nEventService=http://" + $env:computername + ":9800")
 
-# Create Task Sequence
-import-mdttasksequence -path "DS001:\Task Sequences" -Name "Windows Server 2012 R2 Standard" -Template "Server.xml" -Comments "" -ID "Server2012r2std" -Version "1.0" -OperatingSystemPath "DS001:\Operating Systems\Windows Server 2012 R2 SERVERSTANDARD in win2012r2 install.wim" -FullName "Employee" -OrgName "Microsoft Corporation" -HomePage "about:blank" -AdminPassword "P@ssword1" -Verbose
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/ts.xml' -OutFile 'C:\DeploymentShare\Control\SERVER2012R2STD\ts.xml'
+    WriteLog $("Setting up ConfigMgr Tools")
+    Invoke-WebRequest -Uri 'https://download.microsoft.com/download/5/0/8/508918E1-3627-4383-B7D8-AA07B3490D21/ConfigMgrTools.msi' -OutFile 'C:\DeploymentShare\ConfigMgrTools.msi'
+    #Start-Process 'C:\DeploymentShare\ConfigMgrTools.msi' /qn -Wait
 
-# Update Deployment Share
-WriteLog $("Updating Deployment Share")
-update-MDTDeploymentShare -path "DS001:" -Verbose
-WriteLog $("Updating Deployment Share - Complete")
+    $driveLetter = (get-diskimage -imagepath $output|Get-Volume).DriveLetter
 
-# Build Image
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/diskpart1.txt' -OutFile 'C:\DeploymentShare\diskpart1.txt'
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/diskpart2.txt' -OutFile 'C:\DeploymentShare\diskpart2.txt'
-Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CreateVHD.cmd' -OutFile 'C:\DeploymentShare\CreateVHD.cmd'
+    import-mdtoperatingsystem -path "DS001:\Operating Systems" -SourcePath ($driveLetter + ":\") -DestinationFolder "win2012r2" -Verbose
+    WriteLog $("Imported")
+    DisMount-DiskImage -ImagePath $output -ErrorAction SilentlyContinue
+    WriteLog $("Dismounted")
+    #Remove-Item $output
+    WriteLog $("Importing Complete - " + (Test-Path 'c:\deploymentshare\Operating Systems\win2012r2'))
 
-# C:\Windows\system32\cmd.exe /k
-# CD "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\"
-# CD "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment"
-# C:\DeploymentShare\CreateVHD.cmd
-WriteLog $("Calling CreateVHD")
-$out = C:\DeploymentShare\CreateVHD.cmd
-WriteLog $("CreateVHD " + $out)
+    # Create Task Sequence
+    import-mdttasksequence -path "DS001:\Task Sequences" -Name "Windows Server 2012 R2 Standard" -Template "Server.xml" -Comments "" -ID "Server2012r2std" -Version "1.0" -OperatingSystemPath "DS001:\Operating Systems\Windows Server 2012 R2 SERVERSTANDARD in win2012r2 install.wim" -FullName "Employee" -OrgName "Microsoft Corporation" -HomePage "about:blank" -AdminPassword "P@ssword1" -Verbose
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/ts.xml' -OutFile 'C:\DeploymentShare\Control\SERVER2012R2STD\ts.xml'
+
+    # Update Deployment Share
+    WriteLog $("Updating Deployment Share")
+    update-MDTDeploymentShare -path "DS001:" -Verbose
+    WriteLog $("Updating Deployment Share - Complete")
+
+    # Build Image
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/diskpart1.txt' -OutFile 'C:\DeploymentShare\diskpart1.txt'
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/diskpart2.txt' -OutFile 'C:\DeploymentShare\diskpart2.txt'
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/cliveg/dtlartifacts/master/mdt/CreateVHD.cmd' -OutFile 'C:\DeploymentShare\CreateVHD.cmd'
+
+    # C:\Windows\system32\cmd.exe /k
+    # CD "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Deployment Tools\"
+    # CD "C:\Program Files (x86)\Windows Kits\10\Assessment and Deployment Kit\Windows Preinstallation Environment"
+    # C:\DeploymentShare\CreateVHD.cmd
+    WriteLog $("Calling CreateVHD")
+    $out = C:\DeploymentShare\CreateVHD.cmd
+    WriteLog $("CreateVHD " + $out)
 }
 
 ##################################################################################################
@@ -340,6 +390,9 @@ try
 
     #
     DisplayArgValues
+
+    #
+    DownloadWindows2012r2
     
     # install the chocolatey package manager
     InstallChocolatey -chocolateyInstallLog $ChocolateyInstallLog
